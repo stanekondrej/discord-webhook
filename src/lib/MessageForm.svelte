@@ -1,16 +1,26 @@
 <script lang="ts">
-	import { formContents, webhookURL, result } from './stores';
+	import { formContents, webhookURL, result, errorMessages } from './stores';
 	import { handleSubmit } from './submitHandler';
 
-	let errorMessages: Set<string> = new Set();
+	$: {
+		const errorWebhookURLInvalid = 'The webhook URL is invalid.';
+		try {
+			new URL($webhookURL);
+			$errorMessages.delete(errorWebhookURLInvalid);
+		} catch (e) {
+			$errorMessages.add(errorWebhookURLInvalid);
+		}
 
-	function validateURL(url?: string) {
-		if (url) {
+		const errorAvatarURLInvalid = 'The avatar URL is invalid.';
+		if ($formContents.avatar_url !== '') {
 			try {
-				new URL(url);
+				new URL($formContents.avatar_url);
+				$errorMessages.delete(errorAvatarURLInvalid);
 			} catch (e) {
-				throw e;
+				$errorMessages.add(errorAvatarURLInvalid);
 			}
+		} else {
+			$errorMessages.delete(errorAvatarURLInvalid);
 		}
 	}
 </script>
@@ -22,83 +32,57 @@
 >
 	<input
 		name="Webhook URL"
-		alt="Webhook URL"
-		id="webhookURL"
 		type="password"
+		id="webhookURL"
 		placeholder="Webhook URL"
-		autocomplete="off"
 		bind:value={$webhookURL}
-		on:input={() => {
-			const errorMessage = 'The webhook URL is invalid';
-
-			try {
-				validateURL($webhookURL);
-				errorMessages.delete(errorMessage);
-			} catch (e) {
-				console.log(e);
-				errorMessages.add(errorMessage);
-			}
-
-			console.log(errorMessages.size);
-		}}
+		autocomplete="url"
 	/>
-
 	<input
 		name="Avatar URL"
-		alt="Avatar URL"
 		id="avatarURL"
-		type="text"
 		placeholder="Avatar URL"
-		autocomplete="off"
 		bind:value={$formContents.avatar_url}
-		on:input={() => {
-			const errorMessage = 'The avatar URL is invalid';
-
-			try {
-				validateURL($formContents.avatar_url);
-				errorMessages.delete(errorMessage);
-			} catch (e) {
-				console.log(e);
-				errorMessages.add(errorMessage);
-			}
-		}}
+		autocomplete="url"
 	/>
 	<input
 		name="Username"
-		alt="Username"
-		placeholder="Username"
 		id="username"
-		type="text"
-		autocomplete="off"
+		placeholder="Username"
 		bind:value={$formContents.username}
+		autocomplete="username"
 	/>
+
+	<!-- TODO: make this a textarea, as it will be resizable -->
 	<input
 		name="Message content"
-		alt="Message content"
-		placeholder="Message content"
 		id="messageContent"
-		type="text"
-		autocomplete="off"
+		placeholder="Message content"
 		bind:value={$formContents.content}
+		autocomplete="off"
 	/>
-	{#if errorMessages.size > 0}
-		{#each errorMessages.keys() as err}
+
+	{#if $errorMessages.size > 0}
+		{#each $errorMessages.keys() as err}
 			<p>Error: {err}</p>
 		{/each}
 	{:else}
 		<button
 			on:click={async () => {
-				await handleSubmit($webhookURL, $formContents, $result);
+				await handleSubmit($webhookURL, $formContents);
 			}}>Submit</button
 		>
 	{/if}
 </form>
 
 <style scoped lang="scss">
-	form {
-		$padding: 0.5rem;
-		$border-radius: 0.5rem;
+	%shared {
+		padding: 0.5rem;
+		border: 0.1rem solid black;
+		border-radius: 0.5rem;
+	}
 
+	form {
 		display: flex;
 		margin: 0 auto;
 		flex-direction: column;
@@ -108,16 +92,11 @@
 		align-items: center;
 
 		input {
-			margin: 0 auto;
-			padding: $padding;
-			border: 0.1rem solid black;
-			border-radius: $border-radius;
-			font-size: 1.2rem;
+			@extend %shared;
 		}
 
 		button {
-			padding: $padding;
-			border-radius: $border-radius;
+			@extend %shared;
 		}
 	}
 </style>

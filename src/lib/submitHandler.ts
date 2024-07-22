@@ -1,10 +1,6 @@
 import { FormContents } from './stores';
 
-export async function handleSubmit(
-	url: string,
-	formContents: FormContents,
-	result: number | undefined
-) {
+export async function handleSubmit(url: string, formContents: FormContents) {
 	try {
 		await validateForm(formContents);
 	} catch (e) {
@@ -13,17 +9,13 @@ export async function handleSubmit(
 	}
 
 	const json = JSON.stringify(formContents);
-	console.log(json);
 
-	const r = await fetch(url, {
+	// TODO: display the request result somehow
+	const _ = await fetch(url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: json
 	});
-
-	result = r.status;
-
-	console.log(r.statusText);
 }
 
 async function validateForm(formContents: FormContents) {
